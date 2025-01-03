@@ -110,7 +110,13 @@ bool SimpleSmoother::smooth(
     throw nav2_core::FailedToSmoothPath("No segments were smoothed");
   }
 
-  return success;
+  if (!success) {
+    throw nav2_core::FailedToSmoothPath(
+            "Failed to smooth path either due to "
+            "infeasible collision or iteration limit");
+  }
+
+  return true;
 }
 
 bool SimpleSmoother::smoothImpl(
