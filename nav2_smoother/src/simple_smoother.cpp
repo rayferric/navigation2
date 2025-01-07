@@ -65,8 +65,7 @@ bool SimpleSmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool success = true, reversing_segment;
-  unsigned int segments_smoothed = 0;
+  unsigned int segments_attempted = 0, segments_smoothed = 0;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
@@ -88,15 +87,22 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
-      bool segment_was_smoothed = smoothImpl(
-        curr_path_segment, reversing_segment, costmap.get(), time_remaining);
+      try {
+        // Attempt to smooth the path segment
+        bool rev_seg_tmp_unused;
+        // ^ updateApproximatePathOrientations reversed segment angle?
+        bool segment_was_smoothed = smoothImpl(
+          curr_path_segment, rev_seg_tmp_unused, costmap.get(), time_remaining);
 
-      if (segment_was_smoothed) {
-        segments_smoothed++;
+        // Count attempted and successful segments
+        segments_attempted++;
+        if (segment_was_smoothed) {
+          segments_smoothed++;
+        }
+      } catch (const nav2_core::SmootherTimedOut & ex) {
+        // Timeout reached, return false as per smooth() spec
+        return false;
       }
-
-      // Smooth path segment naively
-      success = success && segment_was_smoothed;
 
       // Assemble the path changes to the main path
       std::copy(
@@ -106,16 +112,13 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  if (segments_smoothed == 0 && path_segments.size() > 1) {
+  // If path is not ending (num_seg > 1), and no segments were smoothed - that's a failure
+  // If some segments were attempted, but none succeeded - also a failure
+  if ((path_segments.size() > 1 || segments_attempted > 0) && segments_smoothed == 0) {
     throw nav2_core::FailedToSmoothPath("No segments were smoothed");
   }
 
-  if (!success) {
-    throw nav2_core::FailedToSmoothPath(
-            "Failed to smooth path either due to "
-            "infeasible collision or iteration limit");
-  }
-
+  // no timeout
   return true;
 }
 
