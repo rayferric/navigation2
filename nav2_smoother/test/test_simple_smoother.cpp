@@ -201,10 +201,10 @@ TEST(SmootherTest, test_simple_smoother)
   collision_path.poses[7].pose.position.y = 1.2;
   collision_path.poses[8].pose.position.x = 1.3;
   collision_path.poses[8].pose.position.y = 1.3;
-  collision_path.poses[9].pose.position.x = 1.4;
-  collision_path.poses[9].pose.position.y = 1.4;
-  collision_path.poses[10].pose.position.x = 1.5;
-  collision_path.poses[10].pose.position.y = 1.5;
+  collision_path.poses[9].pose.position.x = 1.2;  // a cusp since we need 2 segments
+  collision_path.poses[9].pose.position.y = 1.2;
+  collision_path.poses[10].pose.position.x = 1.1;
+  collision_path.poses[10].pose.position.y = 1.1;
   EXPECT_THROW(smoother->smooth(collision_path, max_time), nav2_core::FailedToSmoothPath);
 
   // test cusp / reversing segments
@@ -268,9 +268,9 @@ TEST(SmootherTest, test_simple_smoother)
   max_its_path.poses[7].pose.position.y = 0.7;
   max_its_path.poses[8].pose.position.x = 0.5;
   max_its_path.poses[8].pose.position.y = 0.8;
-  max_its_path.poses[9].pose.position.x = 0.5;
-  max_its_path.poses[9].pose.position.y = 0.9;
+  max_its_path.poses[9].pose.position.x = 0.5;  // a cusp since we need 2 segments
+  max_its_path.poses[9].pose.position.y = 0.7;
   max_its_path.poses[10].pose.position.x = 0.5;
-  max_its_path.poses[10].pose.position.y = 1.0;
+  max_its_path.poses[10].pose.position.y = 0.6;
   EXPECT_THROW(smoother->smooth(max_its_path, max_time), nav2_core::FailedToSmoothPath);
 }
